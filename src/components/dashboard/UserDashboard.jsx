@@ -5,9 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import AddBottle from '../recycling/AddBottle';
 import AdminBinManager from '../admin/AdminBinManager';
 import FamilyManager from '../family/FamilyManager';
-import InvitationManager from '../family/InvitationManager';
-import JoinRequestManager from '../family/JoinRequestManager';
-import FamilyMemberView from '../family/FamilyMemberView';
+import FamilyLeaderboard from '../family/FamilyLeaderboard';
 
 
 const UserDashboard = () => {
@@ -55,14 +53,14 @@ const UserDashboard = () => {
         }
 
         // Load family if exists (only for non-guest users)
-        if (userData && userData.role !== 'guest' && userData.family && userData.family.group_id) {
-          const groupDoc = await getDoc(doc(db, 'groups', userData.family.group_id));
-          if (groupDoc.exists()) {
-            const groupData = groupDoc.data();
-            // Find all users in the same group
+        if (userData && userData.role !== 'guest' && userData.family_id) {
+          const familyDoc = await getDoc(doc(db, 'families', userData.family_id));
+          if (familyDoc.exists()) {
+            const familyData = familyDoc.data();
+            // Find all users in the same family
             const membersQuery = query(
               collection(db, 'users'),
-              where('family.group_id', '==', userData.family.group_id)
+              where('family_id', '==', userData.family_id)
             );
             const membersSnapshot = await getDocs(membersQuery);
             const members = membersSnapshot.docs.map(doc => ({
@@ -70,7 +68,7 @@ const UserDashboard = () => {
               ...doc.data()
             }));
             members.sort((a, b) => b.total_points - a.total_points);
-            setFamilyData({ ...groupData, members });
+            setFamilyData({ id: familyDoc.id, ...familyData, members });
           }
         } else {
           setFamilyData(null);
@@ -291,29 +289,15 @@ const UserDashboard = () => {
                         🥤 Add Bottle
                       </button>
                       
-                      {/* Show different tabs based on family status - hide for guests */}
+                      {/* Show family tab for non-guest users */}
                       {userData?.role !== 'guest' && (
-                        !familyData ? (
-                          <>
-                            <button 
-                              className={`btn ${activeTab === 'invitations' ? 'btn-primary' : 'btn-outline'}`}
-                              onClick={() => setActiveTab('invitations')}
-                              style={{ marginRight: 'var(--spacing-sm)' }}
-                            >
-                              📨 Invitations
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button 
-                              className={`btn ${activeTab === 'join-requests' ? 'btn-primary' : 'btn-outline'}`}
-                              onClick={() => setActiveTab('join-requests')}
-                              style={{ marginRight: 'var(--spacing-sm)' }}
-                            >
-                              🤝 Join Requests
-                            </button>
-                          </>
-                        )
+                        <button 
+                          className={`btn ${activeTab === 'family' ? 'btn-primary' : 'btn-outline'}`}
+                          onClick={() => setActiveTab('family')}
+                          style={{ marginRight: 'var(--spacing-sm)' }}
+                        >
+                          👨‍👩‍👧‍👦 Family
+                        </button>
                       )}
                       
                       {userData?.role === 'admin' && (
@@ -374,22 +358,16 @@ const UserDashboard = () => {
               </div>
             </div>
 
-            {/* Family Section - hide for guests */}
-            {userData?.role !== 'guest' && (
-              familyData ? (
-                <FamilyMemberView 
+            {/* Family Leaderboard - hide for guests */}
+            {userData?.role !== 'guest' && familyData && (
+              <div className="card mt-4">
+                <FamilyLeaderboard 
                   userData={userData}
                   familyData={familyData}
                   onFamilyLeft={fetchUserData}
                   onFamilyDeleted={fetchUserData}
                 />
-              ) : (
-                <FamilyManager 
-                  onFamilyCreated={fetchUserData}
-                  onFamilyJoined={fetchUserData}
-                  userData={userData}
-                />
-              )
+              </div>
             )}
 
                         {/* Guest Mode Info */}
@@ -441,25 +419,23 @@ const UserDashboard = () => {
           </div>
         )}
 
-        {/* Invitations Tab */}
-        {activeTab === 'invitations' && (
+        {/* Family Tab */}
+        {activeTab === 'family' && (
           <div className="fade-in">
-            <InvitationManager 
-              userData={userData}
-              onInvitationAccepted={fetchUserData}
-              onInvitationDeclined={fetchUserData}
-            />
-          </div>
-        )}
-
-        {/* Join Requests Tab */}
-        {activeTab === 'join-requests' && familyData && (
-          <div className="fade-in">
-            <JoinRequestManager 
-              userData={userData}
-              familyData={familyData}
-              onRequestProcessed={fetchUserData}
-            />
+            {familyData ? (
+              <FamilyLeaderboard 
+                userData={userData}
+                familyData={familyData}
+                onFamilyLeft={fetchUserData}
+                onFamilyDeleted={fetchUserData}
+              />
+            ) : (
+              <FamilyManager 
+                onFamilyCreated={fetchUserData}
+                onInvitationAccepted={fetchUserData}
+                onInvitationDeclined={fetchUserData}
+              />
+            )}
           </div>
         )}
 

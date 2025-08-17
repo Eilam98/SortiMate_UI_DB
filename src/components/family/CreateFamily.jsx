@@ -46,7 +46,7 @@ const CreateFamily = ({ onClose, onSuccess }) => {
       // Create a new family document
       const familyRef = doc(collection(db, 'families'));
       const familyData = {
-        name: familyName.trim(),
+        family_name: familyName.trim(),
         created_at: serverTimestamp(),
         created_by: user.uid,
         members: [user.uid]
@@ -65,12 +65,11 @@ const CreateFamily = ({ onClose, onSuccess }) => {
       if (onSuccess) {
         onSuccess({
           id: familyRef.id,
-          ...familyData,
-          members: [{ id: user.uid, name: user.displayName || 'You' }]
+          family_name: familyName.trim(),
+          members: [user.uid]
         });
       }
-      
-      onClose();
+
     } catch (error) {
       console.error('Error creating family:', error);
       setError('Failed to create family. Please try again.');
@@ -80,68 +79,53 @@ const CreateFamily = ({ onClose, onSuccess }) => {
   };
 
   return (
-    <div className="container-sm">
+    <div className="container">
       <div className="card">
         <div className="text-center mb-4">
           <div className="text-warning" style={{ fontSize: '4rem' }}>👨‍👩‍👧‍👦</div>
-          <h1 className="text-success">Create a Family</h1>
-          <p className="text-secondary">Start a recycling challenge with your family!</p>
+          <h1 className="text-success">Create Family</h1>
+          <p className="text-secondary">Start your family recycling challenge!</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="grid grid-1">
-          <div>
-            <label htmlFor="familyName" className="font-semibold">
-              👨‍👩‍👧‍👦 Family Name
-              <span className="text-secondary" style={{ fontSize: '0.8rem', marginLeft: 'var(--spacing-sm)' }}>
-                {familyName.length}/20
-              </span>
-            </label>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label htmlFor="familyName" className="form-label">Family Name</label>
             <input
               type="text"
+              className={`form-control ${error ? 'is-invalid' : ''}`}
               id="familyName"
               value={familyName}
               onChange={handleChange}
               placeholder="Enter family name"
               maxLength={20}
-              required
-              className="card"
-              style={{ 
-                width: '100%', 
-                padding: 'var(--spacing-md)',
-                border: '2px solid var(--medium-gray)',
-                borderRadius: 'var(--border-radius-md)',
-                marginTop: 'var(--spacing-sm)'
-              }}
+              disabled={loading}
             />
+            {error && <div className="invalid-feedback">{error}</div>}
+            <div className="form-text">Maximum 20 characters</div>
           </div>
 
-          {error && (
-            <div className="message message-error">
-              <p>{error}</p>
-            </div>
-          )}
-
-          <div className="grid grid-2">
-            <button 
-              type="button" 
-              className="btn btn-outline" 
-              onClick={onClose}
-            >
-              ❌ Cancel
-            </button>
-            <button 
-              type="submit" 
-              className="btn btn-primary" 
-              disabled={loading || familyName.trim().length === 0 || familyName.length > 20}
+          <div className="d-grid gap-2">
+            <button
+              type="submit"
+              className="btn btn-success btn-lg"
+              disabled={loading}
             >
               {loading ? (
                 <>
-                  <div className="loading-spinner" style={{ width: '20px', height: '20px', marginRight: 'var(--spacing-sm)' }}></div>
-                  Creating...
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Creating Family...
                 </>
               ) : (
-                '🚀 Create Family'
+                'Create Family'
               )}
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={onClose}
+              disabled={loading}
+            >
+              Cancel
             </button>
           </div>
         </form>

@@ -19,7 +19,7 @@ export const createUserProfile = async (userId, userData) => {
       recycle_stats: { aluminium: 0, glass: 0, other: 0, plastic: 0 },
       total_points: 0,
       items_recycled: 0,
-      family: { group_id: '', is_current_winner: false, total_wins: 0 },
+      family_id: '',
       role: 'user',
       last_activity: Timestamp.now()
     });
