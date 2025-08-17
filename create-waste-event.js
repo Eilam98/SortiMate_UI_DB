@@ -16,7 +16,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // Function to create a waste event
-async function createWasteEvent(binId = 'bin_001', wasteType = 'METAL', confidence = 0.85) {
+async function createWasteEvent(binId = 'bin_001', wasteType = 'Plastic', confidence = 0.85) {
   const timestamp = new Date().toISOString();
   const eventId = `manual-test-${Date.now()}`;
   const docId = `manual_test_${Date.now()}`;
