@@ -8,7 +8,7 @@ const FamilyLeaderboard = ({ userData, familyData, onFamilyLeft, onFamilyDeleted
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const [familyMembers, setFamilyMembers] = useState([]);
 
   useEffect(() => {
@@ -93,18 +93,28 @@ const FamilyLeaderboard = ({ userData, familyData, onFamilyLeft, onFamilyDeleted
       // Remove user from family members
       const familyRef = doc(db, 'families', familyData.id);
       const currentMembers = familyData.members || [];
-      const updatedMembers = currentMembers.filter(memberId => memberId !== user.uid);
+      // Extract member IDs from the member objects
+      const memberIds = currentMembers.map(member => typeof member === 'string' ? member : member.id);
+      const updatedMembers = memberIds.filter(memberId => memberId !== user.uid);
       
-      await updateDoc(familyRef, {
-        members: updatedMembers
-      });
-
       // Clear user's family info
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, {
         family_id: '',
         last_activity: new Date()
       });
+
+      // Check if family is now empty
+      if (updatedMembers.length === 0) {
+        // Delete the family if no members left
+        await deleteDoc(familyRef);
+        console.log('Family deleted - no members remaining');
+      } else {
+        // Update family with remaining members
+        await updateDoc(familyRef, {
+          members: updatedMembers
+        });
+      }
 
       if (onFamilyLeft) {
         onFamilyLeft();
@@ -119,146 +129,84 @@ const FamilyLeaderboard = ({ userData, familyData, onFamilyLeft, onFamilyDeleted
     }
   };
 
-  const handleDeleteFamily = async () => {
-    setLoading(true);
-    try {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      const db = getFirestore();
 
-      // Check if user is the family creator
-      if (familyData.created_by !== user.uid) {
-        alert('Only the family creator can delete the family.');
-        setLoading(false);
-        setShowDeleteConfirm(false);
-        return;
-      }
 
-      // Remove all members from family
-      const membersQuery = query(
-        collection(db, 'users'),
-        where('family_id', '==', familyData.id)
-      );
-      const membersSnapshot = await getDocs(membersQuery);
-      
-      const updatePromises = membersSnapshot.docs.map(doc => 
-        updateDoc(doc.ref, {
-          family_id: '',
-          last_activity: new Date()
-        })
-      );
-      
-      await Promise.all(updatePromises);
+    return (
+    <div className="card mt-4">
+      <div className="text-center mb-4">
+        <div className="text-warning" style={{ fontSize: '3rem' }}>👨‍👩‍👧‍👦</div>
+        <h2 className="text-success mb-2">Family Recycling Challenge</h2>
+        <p className="text-muted">Compete with your family members!</p>
+      </div>
 
-      // Delete the family
-      const familyRef = doc(db, 'families', familyData.id);
-      await deleteDoc(familyRef);
-
-      if (onFamilyDeleted) {
-        onFamilyDeleted();
-      }
-
-    } catch (error) {
-      console.error('Error deleting family:', error);
-      alert('Failed to delete family. Please try again.');
-    } finally {
-      setLoading(false);
-      setShowDeleteConfirm(false);
-    }
-  };
-
-  return (
-    <div className="container">
-      <div className="card">
-        <div className="text-center mb-4">
-          <div className="text-warning" style={{ fontSize: '4rem' }}>👨‍👩‍👧‍👦</div>
-          <h1 className="text-success">Family Recycling Challenge</h1>
+      {/* Family Leaderboard */}
+      <div className="mb-4">
+        <div className="d-flex align-items-center mb-3">
+          <span className="me-2" style={{ fontSize: '1.5rem' }}>🏆</span>
+          <h4 className="mb-0">Family Leaderboard</h4>
         </div>
-
-        {/* Family Leaderboard */}
-        <div className="card mb-4">
-          <div className="card-header d-flex align-items-center">
-            <span className="me-2" style={{ fontSize: '1.5rem' }}>🏆</span>
-            <h3 className="mb-0">Family Leaderboard</h3>
-          </div>
-          <div className="card-body">
-            {familyMembers.length === 0 ? (
-              <p className="text-center text-muted">No family members found.</p>
-            ) : (
-              <div className="list-group list-group-flush">
-                {familyMembers.map((member, index) => (
-                  <div key={member.id} className="list-group-item d-flex justify-content-between align-items-center">
-                    <div className="d-flex align-items-center">
-                      <span className={`badge ${index === 0 ? 'bg-warning' : 'bg-secondary'} me-3`}>
-                        #{index + 1}
-                      </span>
-                      <span className="fw-bold">{member.first_name} {member.last_name}</span>
-                    </div>
-                    <span className="text-primary fw-bold">{member.total_points} points</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Invite New Member */}
-        <div className="card mb-4">
-          <div className="card-header">
-            <h5 className="mb-0">Invite New Member</h5>
-          </div>
-          <div className="card-body">
-            <form onSubmit={handleSendInvitation}>
-              <div className="row">
-                <div className="col-md-8">
-                  <input
-                    type="text"
-                    className={`form-control ${error ? 'is-invalid' : ''}`}
-                    placeholder="Enter user ID"
-                    value={inviteUserId}
-                    onChange={(e) => setInviteUserId(e.target.value)}
-                    disabled={loading}
-                  />
-                  {error && <div className="invalid-feedback">{error}</div>}
-                  {success && <div className="valid-feedback">{success}</div>}
+        {familyMembers.length === 0 ? (
+          <p className="text-center text-muted">No family members found.</p>
+        ) : (
+          <div className="list-group">
+            {familyMembers.map((member, index) => (
+              <div key={member.id} className="list-group-item d-flex justify-content-between align-items-center">
+                <div className="d-flex align-items-center">
+                  <span className={`badge ${index === 0 ? 'bg-warning' : 'bg-secondary'} me-3`}>
+                    #{index + 1}
+                  </span>
+                  <span className="fw-bold">{member.first_name} {member.last_name}</span>
                 </div>
-                <div className="col-md-4">
-                  <button
-                    type="submit"
-                    className="btn btn-primary w-100"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                    ) : (
-                      'Send Invitation'
-                    )}
-                  </button>
-                </div>
+                <span className="text-primary fw-bold">{member.total_points} points</span>
               </div>
-            </form>
+            ))}
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* Family Actions */}
-        <div className="d-grid gap-2">
-          <button
-            className="btn btn-outline-warning"
-            onClick={() => setShowLeaveConfirm(true)}
-            disabled={loading}
-          >
-            Leave Family
-          </button>
-          {familyData?.created_by === getAuth().currentUser?.uid && (
-            <button
-              className="btn btn-outline-danger"
-              onClick={() => setShowDeleteConfirm(true)}
-              disabled={loading}
-            >
-              Delete Family
-            </button>
-          )}
-        </div>
+      {/* Invite New Member */}
+      <div className="mb-4">
+        <h5 className="mb-3">Invite New Member</h5>
+        <form onSubmit={handleSendInvitation}>
+          <div className="row g-2">
+            <div className="col-md-8">
+              <input
+                type="text"
+                className={`form-control ${error ? 'is-invalid' : ''}`}
+                placeholder="Enter user ID"
+                value={inviteUserId}
+                onChange={(e) => setInviteUserId(e.target.value)}
+                disabled={loading}
+              />
+              {error && <div className="invalid-feedback">{error}</div>}
+              {success && <div className="valid-feedback">{success}</div>}
+            </div>
+            <div className="col-md-4">
+              <button
+                type="submit"
+                className="btn btn-primary w-100"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                ) : (
+                  'Send Invitation'
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {/* Family Actions */}
+      <div className="d-grid">
+        <button
+          className="btn btn-outline-warning"
+          onClick={() => setShowLeaveConfirm(true)}
+          disabled={loading}
+        >
+          Leave Family
+        </button>
       </div>
 
       {/* Leave Family Confirmation Modal */}
@@ -286,30 +234,7 @@ const FamilyLeaderboard = ({ userData, familyData, onFamilyLeft, onFamilyDeleted
         </div>
       )}
 
-      {/* Delete Family Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Delete Family</h5>
-                <button type="button" className="btn-close" onClick={() => setShowDeleteConfirm(false)}></button>
-              </div>
-              <div className="modal-body">
-                <p>Are you sure you want to delete this family? This action cannot be undone and all members will be removed.</p>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowDeleteConfirm(false)}>
-                  Cancel
-                </button>
-                <button type="button" className="btn btn-danger" onClick={handleDeleteFamily}>
-                  Delete Family
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      
     </div>
   );
 };

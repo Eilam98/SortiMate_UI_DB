@@ -105,77 +105,71 @@ const JoinRequests = ({ onInvitationAccepted, onInvitationDeclined }) => {
 
   if (loading) {
     return (
-      <div className="container">
-        <div className="card">
-          <div className="text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <p className="mt-3">Loading invitations...</p>
-          </div>
+      <div className="text-center">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
         </div>
+        <p className="mt-3">Loading invitations...</p>
       </div>
     );
   }
 
   return (
-    <div className="container">
-      <div className="card">
-        <div className="text-center mb-4">
-          <div className="text-info" style={{ fontSize: '3rem' }}>📨</div>
-          <h1 className="text-primary">Join Requests</h1>
-          <p className="text-secondary">Invitations from family members</p>
-        </div>
-
-        {joinRequests.length === 0 ? (
-          <div className="text-center py-4">
-            <div className="text-muted" style={{ fontSize: '4rem' }}>📭</div>
-            <h3 className="text-muted">No Invitations</h3>
-            <p className="text-secondary">You don't have any pending family invitations.</p>
-          </div>
-        ) : (
-          <div className="list-group">
-            {joinRequests.map((request) => (
-              <div key={request.id} className="list-group-item">
-                <div className="d-flex justify-content-between align-items-center">
-                  <div>
-                    <h5 className="mb-1">{request.family_name}</h5>
-                    <p className="mb-1 text-secondary">
-                      Invited by: {request.from_user_name}
-                    </p>
-                    <small className="text-muted">
-                      {request.created_at?.toDate?.() ? 
-                        request.created_at.toDate().toLocaleDateString() : 
-                        'Recently'
-                      }
-                    </small>
-                  </div>
-                  <div className="btn-group">
-                    <button
-                      className="btn btn-success btn-sm"
-                      onClick={() => handleAcceptRequest(request)}
-                      disabled={processing}
-                    >
-                      {processing ? (
-                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                      ) : (
-                        'Accept'
-                      )}
-                    </button>
-                    <button
-                      className="btn btn-outline-danger btn-sm"
-                      onClick={() => handleDeclineRequest(request)}
-                      disabled={processing}
-                    >
-                      Decline
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+    <div>
+      <div className="text-center mb-4">
+        <div className="text-info" style={{ fontSize: '2.5rem' }}>📨</div>
+        <h3 className="text-primary mb-2">Join Requests</h3>
+        <p className="text-muted">Invitations from family members</p>
       </div>
+
+      {joinRequests.length === 0 ? (
+        <div className="text-center py-4">
+          <div className="text-muted" style={{ fontSize: '3rem' }}>📭</div>
+          <h4 className="text-muted">No Invitations</h4>
+          <p className="text-secondary">You don't have any pending family invitations.</p>
+        </div>
+      ) : (
+                 <div className="list-group">
+           {joinRequests.map((request) => (
+             <div key={request.id} className="list-group-item">
+               <div>
+                 <h5 className="mb-2">{request.family_name}</h5>
+                 <p className="mb-2 text-secondary">
+                   Invited by: {request.from_user_name}
+                 </p>
+                 <div className="d-flex justify-content-between align-items-center">
+                   <small className="text-muted">
+                     {request.created_at?.toDate?.() ? 
+                       request.created_at.toDate().toLocaleDateString() : 
+                       'Recently'
+                     }
+                   </small>
+                   <div className="btn-group">
+                     <button
+                       className="btn btn-success btn-sm"
+                       onClick={() => handleAcceptRequest(request)}
+                       disabled={processing}
+                     >
+                       {processing ? (
+                         <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                       ) : (
+                         'Accept'
+                       )}
+                     </button>
+                     <button
+                       className="btn btn-outline-danger btn-sm"
+                       onClick={() => handleDeclineRequest(request)}
+                       disabled={processing}
+                     >
+                       Decline
+                     </button>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           ))}
+         </div>
+      )}
     </div>
   );
 };

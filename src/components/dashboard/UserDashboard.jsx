@@ -289,16 +289,7 @@ const UserDashboard = () => {
                         🥤 Add Bottle
                       </button>
                       
-                      {/* Show family tab for non-guest users */}
-                      {userData?.role !== 'guest' && (
-                        <button 
-                          className={`btn ${activeTab === 'family' ? 'btn-primary' : 'btn-outline'}`}
-                          onClick={() => setActiveTab('family')}
-                          style={{ marginRight: 'var(--spacing-sm)' }}
-                        >
-                          👨‍👩‍👧‍👦 Family
-                        </button>
-                      )}
+
                       
                       {userData?.role === 'admin' && (
                         <button 
@@ -358,16 +349,22 @@ const UserDashboard = () => {
               </div>
             </div>
 
-            {/* Family Leaderboard - hide for guests */}
-            {userData?.role !== 'guest' && familyData && (
-              <div className="card mt-4">
+            {/* Family Section - hide for guests */}
+            {userData?.role !== 'guest' && (
+              familyData ? (
                 <FamilyLeaderboard 
                   userData={userData}
                   familyData={familyData}
                   onFamilyLeft={fetchUserData}
                   onFamilyDeleted={fetchUserData}
                 />
-              </div>
+              ) : (
+                <FamilyManager 
+                  onFamilyCreated={fetchUserData}
+                  onInvitationAccepted={fetchUserData}
+                  onInvitationDeclined={fetchUserData}
+                />
+              )
             )}
 
                         {/* Guest Mode Info */}
@@ -419,25 +416,7 @@ const UserDashboard = () => {
           </div>
         )}
 
-        {/* Family Tab */}
-        {activeTab === 'family' && (
-          <div className="fade-in">
-            {familyData ? (
-              <FamilyLeaderboard 
-                userData={userData}
-                familyData={familyData}
-                onFamilyLeft={fetchUserData}
-                onFamilyDeleted={fetchUserData}
-              />
-            ) : (
-              <FamilyManager 
-                onFamilyCreated={fetchUserData}
-                onInvitationAccepted={fetchUserData}
-                onInvitationDeclined={fetchUserData}
-              />
-            )}
-          </div>
-        )}
+
 
         {/* Admin Tab */}
         {activeTab === 'admin' && userData?.role === 'admin' && (

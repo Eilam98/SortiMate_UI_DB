@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { getFirestore, collection, doc, setDoc, getDocs } from 'firebase/firestore';
 import '../../styles/AdminBinManager.css';
 import { QRCode } from 'react-qr-code';
-import { updateBinsWithActiveUser } from '../../utils/updateBinsWithActiveUser';
 
 const AdminBinManager  = () => {
   const [allBins, setAllBins] = useState([]);
@@ -51,16 +50,7 @@ const AdminBinManager  = () => {
     }
   };
 
-  const updateExistingBins = async () => {
-    try {
-      await updateBinsWithActiveUser();
-      alert('✅ All existing bins updated with active_user field!');
-      fetchAllBins(); // Refresh bin list
-    } catch (error) {
-      console.error('Error updating bins:', error);
-      alert('Error updating bins: ' + error.message);
-    }
-  };
+
 
   const fetchAllBins = async () => {
     try {
@@ -91,7 +81,6 @@ const AdminBinManager  = () => {
 
       <div className="admin-buttons">
         <button onClick={createNewBin} className="create-bin-btn">Create New Bin</button>
-        <button onClick={updateExistingBins} className="update-bins-btn">Update Existing Bins</button>
       </div>
 
       <div className="all-bins-list">

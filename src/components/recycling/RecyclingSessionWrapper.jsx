@@ -84,11 +84,6 @@ const RecyclingSessionWrapper = () => {
         <div className="card text-center">
           <h2 className="text-primary">Loading...</h2>
           <p className="text-secondary">Please wait while we load your session.</p>
-          <div className="mt-4">
-            <p className="text-sm text-secondary">
-              Debug: Loading user data...
-            </p>
-          </div>
         </div>
       </div>
     );
