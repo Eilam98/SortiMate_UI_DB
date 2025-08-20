@@ -154,24 +154,6 @@ const BinPage = () => {
   // Show introduction page for non-authenticated users
   return (
     <div>
-      {/* Debug Info for BinPage */}
-      <div className="card mb-4" style={{ position: 'fixed', top: '10px', right: '10px', zIndex: 1000, maxWidth: '300px', fontSize: '12px' }}>
-        <div className="text-center">
-          <h4>🔍 BinPage Debug</h4>
-          <p><strong>binId from URL:</strong> {binId || 'null'}</p>
-          <p><strong>binExists:</strong> {binExists ? 'true' : 'false'}</p>
-          <p><strong>loading:</strong> {loading ? 'true' : 'false'}</p>
-          <button 
-            className="btn btn-outline btn-sm mt-2" 
-            onClick={() => {
-              alert(`BinPage Debug:\nbinId: ${binId}\nbinExists: ${binExists}\nloading: ${loading}\nURL: ${window.location.href}`);
-            }}
-          >
-            🔍 BinPage Info
-          </button>
-        </div>
-      </div>
-      
       <IntroductionPage
         onSignUpClick={handleSignUpClick}
         onSignInClick={handleSignInClick}

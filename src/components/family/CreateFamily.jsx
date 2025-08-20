@@ -79,57 +79,55 @@ const CreateFamily = ({ onClose, onSuccess }) => {
   };
 
   return (
-    <div className="container">
-      <div className="card">
-        <div className="text-center mb-4">
-          <div className="text-warning" style={{ fontSize: '4rem' }}>👨‍👩‍👧‍👦</div>
-          <h1 className="text-success">Create Family</h1>
-          <p className="text-secondary">Start your family recycling challenge!</p>
+    <div>
+      <div className="text-center mb-4">
+        <div className="text-warning" style={{ fontSize: '2.5rem' }}>👨‍👩‍👧‍👦</div>
+        <h3 className="text-success mb-2">Create Family</h3>
+        <p className="text-muted">Start your family recycling challenge!</p>
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        <div className="mb-3">
+          <label htmlFor="familyName" className="form-label">Family Name</label>
+          <input
+            type="text"
+            className={`form-control ${error ? 'is-invalid' : ''}`}
+            id="familyName"
+            value={familyName}
+            onChange={handleChange}
+            placeholder="Enter family name"
+            maxLength={20}
+            disabled={loading}
+          />
+          {error && <div className="invalid-feedback">{error}</div>}
+          <div className="form-text">Maximum 20 characters</div>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label htmlFor="familyName" className="form-label">Family Name</label>
-            <input
-              type="text"
-              className={`form-control ${error ? 'is-invalid' : ''}`}
-              id="familyName"
-              value={familyName}
-              onChange={handleChange}
-              placeholder="Enter family name"
-              maxLength={20}
-              disabled={loading}
-            />
-            {error && <div className="invalid-feedback">{error}</div>}
-            <div className="form-text">Maximum 20 characters</div>
-          </div>
-
-          <div className="d-grid gap-2">
-            <button
-              type="submit"
-              className="btn btn-success btn-lg"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  Creating Family...
-                </>
-              ) : (
-                'Create Family'
-              )}
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline-secondary"
-              onClick={onClose}
-              disabled={loading}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
+        <div className="d-grid gap-2">
+          <button
+            type="submit"
+            className="btn btn-success"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Creating Family...
+              </>
+            ) : (
+              'Create Family'
+            )}
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline-secondary"
+            onClick={onClose}
+            disabled={loading}
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

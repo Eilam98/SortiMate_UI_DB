@@ -6,6 +6,7 @@ import WaitingScreen from './WaitingScreen';
 import IdentificationConfirmation from './IdentificationConfirmation';
 import CorrectionForm from './CorrectionForm';
 import SessionSummary from './SessionSummary';
+import WrongClassificationModal from './WrongClassificationModal';
 
 const RecyclingSession = ({ userData }) => {
   const { binId } = useParams();
@@ -33,6 +34,12 @@ const RecyclingSession = ({ userData }) => {
   const [isListening, setIsListening] = useState(false);
   const wasteEventListenerRef = useRef(null); // Ref to hold the listener unsubscribe function
   const isInitialSnapshotRef = useRef(true); // Ref to track if initial snapshot has been processed
+
+  // Wrong classification listener state
+  const [wrongClassificationData, setWrongClassificationData] = useState(null);
+  const [showWrongClassificationModal, setShowWrongClassificationModal] = useState(false);
+  const wrongClassificationListenerRef = useRef(null); // Ref to hold the wrong classification listener unsubscribe function
+  const wrongClassificationInitialSnapshotRef = useRef(true); // Ref to track if initial snapshot has been processed
 
   const db = getFirestore();
   const auth = getAuth();
@@ -236,6 +243,13 @@ const RecyclingSession = ({ userData }) => {
     }
   };
 
+  // Reset session timer (used for wrong classification modal)
+  const resetSessionTimer = () => {
+    console.log('⏰ Resetting session timeout due to wrong classification modal');
+    setLastBottleTime(new Date());
+    setSessionTimeout(3 * 60 * 1000); // 3 minutes in milliseconds
+  };
+
   // Create waste event in Firestore
   const createWasteEvent = async (binId, wasteType, currentSessionId) => {
     try {
@@ -383,6 +397,8 @@ const RecyclingSession = ({ userData }) => {
     
     // Re-setup waste event listener for continued session
     setupWasteEventListener();
+    // Re-setup wrong classification listener for continued session
+    setupWrongClassificationListener();
   };
 
   // Handle going back from occupied state
@@ -493,6 +509,99 @@ const RecyclingSession = ({ userData }) => {
     console.log('🎧 Waste event listener setup complete');
   };
 
+  // --- Wrong Classification Listener Logic ---
+  const setupWrongClassificationListener = () => {
+    console.log('⚠️ Setting up wrong classification listener for bin:', binId);
+    
+    // Clean up any existing listener
+    if (wrongClassificationListenerRef.current) {
+      console.log('⚠️ Cleaning up existing wrong classification listener');
+      wrongClassificationListenerRef.current();
+      wrongClassificationListenerRef.current = null;
+    }
+
+    // Reset initial snapshot flag
+    wrongClassificationInitialSnapshotRef.current = true;
+
+    // Set up query to listen for wrong classifications for this specific bin
+    const wrongClassificationsQuery = query(
+      collection(db, 'wrong_classifications'),
+      where('bin_id', '==', binId),
+      where('user_answered', '==', false)
+    );
+    
+    console.log('⚠️ Wrong classification query created:', wrongClassificationsQuery);
+
+    // Attach listener
+    wrongClassificationListenerRef.current = onSnapshot(wrongClassificationsQuery, (snapshot) => {
+      console.log('⚠️ Wrong classification snapshot received, changes:', snapshot.docChanges().length);
+      
+      // Process changes
+      snapshot.docChanges().forEach((change) => {
+        const wrongClassificationData = { id: change.doc.id, ...change.doc.data() };
+        console.log('⚠️ Wrong classification change:', change.type, wrongClassificationData);
+        
+        // Only process 'added' changes for new wrong classifications
+        if (change.type === 'added') {
+          // Skip initial snapshot events
+          if (wrongClassificationInitialSnapshotRef.current) {
+            console.log('⚠️ Skipping initial snapshot wrong classification');
+            return;
+          }
+          
+          console.log('⚠️ New wrong classification detected:', wrongClassificationData);
+          
+          // Show modal and reset session timer
+          setWrongClassificationData(wrongClassificationData);
+          setShowWrongClassificationModal(true);
+          
+          // Reset the 3-minute session timer
+          resetSessionTimer();
+        }
+      });
+      
+      // Mark initial snapshot as processed
+      if (wrongClassificationInitialSnapshotRef.current) {
+        console.log('⚠️ Initial wrong classification snapshot processed');
+        wrongClassificationInitialSnapshotRef.current = false;
+      }
+    });
+
+    console.log('⚠️ Wrong classification listener setup complete');
+  };
+
+  const cleanupWrongClassificationListener = () => {
+    console.log('⚠️ Cleaning up wrong classification listener');
+    if (wrongClassificationListenerRef.current) {
+      wrongClassificationListenerRef.current();
+      wrongClassificationListenerRef.current = null;
+    }
+  };
+
+  // Handle wrong classification user response
+  const handleWrongClassificationSubmit = async (userClassifiedType) => {
+    try {
+      console.log('⚠️ Updating wrong classification with user response:', userClassifiedType);
+      
+      // Update the wrong classification document
+      const wrongClassificationRef = doc(db, 'wrong_classifications', wrongClassificationData.id);
+      await updateDoc(wrongClassificationRef, {
+        user_answered: true,
+        user_classified_type: userClassifiedType
+      });
+      
+      console.log('✅ Wrong classification updated successfully');
+      
+      // Close the modal
+      setShowWrongClassificationModal(false);
+      setWrongClassificationData(null);
+      
+    } catch (error) {
+      console.error('❌ Error updating wrong classification:', error);
+      throw error;
+    }
+  };
+
   const cleanupWasteEventListener = () => {
     console.log('🎧 Cleaning up waste event listener');
     if (wasteEventListenerRef.current) {
@@ -525,6 +634,8 @@ const RecyclingSession = ({ userData }) => {
           
           // Set up waste event listener when session starts
           setupWasteEventListener();
+          // Set up wrong classification listener when session starts
+          setupWrongClassificationListener();
         }
       });
     } else {
@@ -538,6 +649,7 @@ const RecyclingSession = ({ userData }) => {
     return () => {
       console.log('RecyclingSession component unmounting or navigating away. Releasing bin and cleaning up listener.');
       cleanupWasteEventListener();
+      cleanupWrongClassificationListener();
       releaseBin();
     };
   }, [binId, userData]); // Re-run if binId changes or user changes
@@ -547,6 +659,7 @@ const RecyclingSession = ({ userData }) => {
     const handleBeforeUnload = () => {
       console.log('🔄 Page unload detected - releasing bin and cleaning up listener');
       cleanupWasteEventListener();
+      cleanupWrongClassificationListener();
       releaseBin();
     };
 
@@ -554,6 +667,7 @@ const RecyclingSession = ({ userData }) => {
       if (document.visibilityState === 'hidden') {
         console.log('🔄 Page hidden detected - releasing bin and cleaning up listener');
         cleanupWasteEventListener();
+        cleanupWrongClassificationListener();
         releaseBin();
       }
     };
@@ -693,6 +807,14 @@ const RecyclingSession = ({ userData }) => {
             </div>
           </div>
         </div>
+        
+        {/* Wrong Classification Modal - rendered on top of any state */}
+        <WrongClassificationModal
+          isOpen={showWrongClassificationModal}
+          onClose={() => setShowWrongClassificationModal(false)}
+          onSubmit={handleWrongClassificationSubmit}
+          wrongClassificationData={wrongClassificationData}
+        />
       </div>
     );
   }
@@ -700,51 +822,91 @@ const RecyclingSession = ({ userData }) => {
   // Render waiting state
   if (currentStep === 'waiting') {
     return (
-      <WaitingScreen
-        onIdentificationReceived={handleIdentificationReceived}
-        userData={userData}
-        sessionBottles={sessionBottles}
-        sessionPoints={sessionPoints}
-        onFinishSession={endSession}
-        sessionStartTime={sessionStartTime}
-        lastBottleTime={lastBottleTime}
-      />
+      <>
+        <WaitingScreen
+          onIdentificationReceived={handleIdentificationReceived}
+          userData={userData}
+          sessionBottles={sessionBottles}
+          sessionPoints={sessionPoints}
+          onFinishSession={endSession}
+          sessionStartTime={sessionStartTime}
+          lastBottleTime={lastBottleTime}
+        />
+        
+        {/* Wrong Classification Modal - rendered on top of any state */}
+        <WrongClassificationModal
+          isOpen={showWrongClassificationModal}
+          onClose={() => setShowWrongClassificationModal(false)}
+          onSubmit={handleWrongClassificationSubmit}
+          wrongClassificationData={wrongClassificationData}
+        />
+      </>
     );
   }
 
   // Render confirmation state
   if (currentStep === 'confirmation') {
     return (
-      <IdentificationConfirmation
-        wasteEvent={wasteEvent}
-        onCorrect={handleCorrectIdentification}
-        onIncorrect={handleIncorrectIdentification}
-      />
+      <>
+        <IdentificationConfirmation
+          wasteEvent={wasteEvent}
+          onCorrect={handleCorrectIdentification}
+          onIncorrect={handleIncorrectIdentification}
+        />
+        
+        {/* Wrong Classification Modal - rendered on top of any state */}
+        <WrongClassificationModal
+          isOpen={showWrongClassificationModal}
+          onClose={() => setShowWrongClassificationModal(false)}
+          onSubmit={handleWrongClassificationSubmit}
+          wrongClassificationData={wrongClassificationData}
+        />
+      </>
     );
   }
 
   // Render correction state
   if (currentStep === 'correction') {
     return (
-      <CorrectionForm
-        originalIdentification={wasteEvent?.waste_type}
-        onSubmit={handleCorrectionSubmit}
-        onCancel={() => setCurrentStep('waiting')} // Go back to waiting if cancelled
-      />
+      <>
+        <CorrectionForm
+          originalIdentification={wasteEvent?.waste_type}
+          onSubmit={handleCorrectionSubmit}
+          onCancel={() => setCurrentStep('waiting')} // Go back to waiting if cancelled
+        />
+        
+        {/* Wrong Classification Modal - rendered on top of any state */}
+        <WrongClassificationModal
+          isOpen={showWrongClassificationModal}
+          onClose={() => setShowWrongClassificationModal(false)}
+          onSubmit={handleWrongClassificationSubmit}
+          wrongClassificationData={wrongClassificationData}
+        />
+      </>
     );
   }
 
   // Render summary state
   if (currentStep === 'summary') {
     return (
-      <SessionSummary
-        sessionBottles={sessionBottles}
-        sessionPoints={sessionPoints}
-        sessionStartTime={sessionStartTime}
-        onAwardPoints={handleAwardSessionPoints}
-        onReset={handleNewSession}
-        userData={userData}
-      />
+      <>
+        <SessionSummary
+          sessionBottles={sessionBottles}
+          sessionPoints={sessionPoints}
+          sessionStartTime={sessionStartTime}
+          onAwardPoints={handleAwardSessionPoints}
+          onReset={handleNewSession}
+          userData={userData}
+        />
+        
+        {/* Wrong Classification Modal - rendered on top of any state */}
+        <WrongClassificationModal
+          isOpen={showWrongClassificationModal}
+          onClose={() => setShowWrongClassificationModal(false)}
+          onSubmit={handleWrongClassificationSubmit}
+          wrongClassificationData={wrongClassificationData}
+        />
+      </>
     );
   }
 

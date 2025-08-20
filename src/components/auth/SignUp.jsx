@@ -1,8 +1,8 @@
 // ✅ SignUp.jsx
 import React, { useState } from 'react';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { auth } from '../../firebase/config';
-import { getFirestore, doc, setDoc, getDoc, getDocs, query, collection, where } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, getDocs, query, collection, where, deleteDoc } from 'firebase/firestore';
 
 const isValidIsraeliID = (id) => {
   id = String(id).trim();
@@ -90,7 +90,6 @@ const SignUp = ({ onBack, onSuccess }) => {
       });
 
              // Check if there's a guest user to delete
-       const auth = getAuth();
        const currentUser = auth.currentUser;
        if (currentUser) {
          try {
