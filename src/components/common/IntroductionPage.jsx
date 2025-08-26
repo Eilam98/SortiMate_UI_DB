@@ -2,6 +2,7 @@ import React from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../../firebase/config';
+import { trackConnection } from '../../utils/connectionTracker';
 
 const IntroductionPage = ({ onSignUpClick, onSignInClick, onGuestClick, successMessage }) => {
   const handleGuestClick = async () => {
@@ -35,6 +36,9 @@ const IntroductionPage = ({ onSignUpClick, onSignInClick, onGuestClick, successM
       };
       
       await setDoc(doc(db, 'users', user.uid), userDoc);
+      
+      // Track the guest connection
+      await trackConnection(true); // true = guest user
       
       console.log('🎯 Guest user created successfully:', guestId);
       

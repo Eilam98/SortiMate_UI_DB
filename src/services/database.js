@@ -16,7 +16,7 @@ export const createUserProfile = async (userId, userData) => {
     await setDoc(doc(db, 'users', userId), {
       ...userData,
       created_at: Timestamp.now(),
-      recycle_stats: { aluminium: 0, glass: 0, other: 0, plastic: 0 },
+      recycle_stats: { metal: 0, glass: 0, other: 0, plastic: 0 },
       total_points: 0,
       items_recycled: 0,
       family_id: '',

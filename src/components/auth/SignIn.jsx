@@ -3,6 +3,7 @@ import { signInWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { getFirestore, collection, query, where, getDocs, doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { auth } from '../../firebase/config';
 import { useNavigate } from 'react-router-dom';
+import { trackConnection } from '../../utils/connectionTracker';
 
 const signInWithIDAndPassword = async (idNumber, password) => {
   // Get the fake email from the ID
@@ -46,6 +47,9 @@ const SignIn = ({ onBack, onSuccess }) => {
 
          try {
        await signInWithIDAndPassword(formData.idNumber, formData.password);
+       
+       // Track the user connection
+       await trackConnection(false); // false = registered user
        
        // Check if there was a guest user that needs to be deleted
        const auth = getAuth();

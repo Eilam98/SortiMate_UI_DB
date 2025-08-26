@@ -32,8 +32,8 @@ const AdminBinManager  = () => {
         bin_id: binId,
         created_at: new Date(),
         location: '',
-        capacity: { aluminium: 0, glass: 0, plastic: 0, other: 0 },
-        alert: { aluminium: false, glass: false, plastic: false, other: false, bin_id: binId },
+        capacity: { metal: 0, glass: 0, plastic: 0, other: 0 },
+        alert: { metal: false, glass: false, plastic: false, other: false, bin_id: binId },
         status: 'available',
         admin_notes: '',
         rpi_connected: false,
@@ -94,7 +94,7 @@ const AdminBinManager  = () => {
             <div>Status: {bin.status}</div>
             <div>
               Capacity: Plastic: {bin.capacity?.plastic || 0}, Glass: {bin.capacity?.glass || 0},
-              Aluminium: {bin.capacity?.aluminium || 0}, Other: {bin.capacity?.other || 0}
+              Metal: {bin.capacity?.metal || 0}, Other: {bin.capacity?.other || 0}
             </div>
             <div>Admin Notes: {bin.admin_notes}</div>
             <div>

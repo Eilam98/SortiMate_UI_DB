@@ -118,7 +118,7 @@ const LoadingScreen = ({ onComplete }) => {
               </div>
             </div>
 
-            {/* Top Right - Green with Aluminum Can */}
+            {/* Top Right - Green with Metal Can */}
             <div style={{
               backgroundColor: '#58CC02',
               borderRadius: 'var(--border-radius-md)',

@@ -44,7 +44,7 @@ const WaitingScreen = ({
       confidence: 0.95,
       error_message: "",
       fill_levels_after: {
-        aluminium: 0,
+        metal: 0,
         glass: 0,
         other: 0,
         plastic: 0
@@ -121,7 +121,7 @@ const WaitingScreen = ({
                   </div>
                 </div>
 
-                {/* Top Right - Green with Aluminum Can */}
+                {/* Top Right - Green with Metal Can */}
                 <div style={{
                   backgroundColor: '#58CC02',
                   borderRadius: 'var(--border-radius-sm)',
@@ -240,8 +240,8 @@ const WaitingScreen = ({
                 <h4 className="text-primary">{sessionBottles?.plastic || 0}</h4>
               </div>
               <div className="text-center">
-                <p className="text-secondary mb-1">🥫 Aluminum</p>
-                <h4 className="text-primary">{sessionBottles?.aluminum || 0}</h4>
+                                    <p className="text-secondary mb-1">🥫 Metal</p>
+                    <h4 className="text-primary">{sessionBottles?.metal || 0}</h4>
               </div>
               <div className="text-center">
                 <p className="text-secondary mb-1">🍾 Glass</p>
@@ -291,7 +291,7 @@ const WaitingScreen = ({
                 >
                   <option value="">Select Bottle Type</option>
                   <option value="plastic">🥤 Plastic</option>
-                  <option value="aluminum">🥫 Aluminum</option>
+                  <option value="metal">🥫 Metal</option>
                   <option value="glass">🍾 Glass</option>
                   <option value="other">📦 Other</option>
                 </select>

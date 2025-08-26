@@ -4,6 +4,7 @@ import { getAuth, signOut } from 'firebase/auth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AddBottle from '../recycling/AddBottle';
 import AdminBinManager from '../admin/AdminBinManager';
+import Statistics from '../admin/Statistics';
 import FamilyManager from '../family/FamilyManager';
 import FamilyLeaderboard from '../family/FamilyLeaderboard';
 
@@ -292,13 +293,21 @@ const UserDashboard = () => {
 
                       
                       {userData?.role === 'admin' && (
-                        <button 
-                          className={`btn ${activeTab === 'admin' ? 'btn-primary' : 'btn-outline'}`}
-                          onClick={() => setActiveTab('admin')}
-                          style={{ borderRadius: '0 var(--border-radius-md) 0 0' }}
-                        >
-                          ⚙️ Admin
-                        </button>
+                        <>
+                          <button 
+                            className={`btn ${activeTab === 'admin' ? 'btn-primary' : 'btn-outline'}`}
+                            onClick={() => setActiveTab('admin')}
+                          >
+                            ⚙️ Admin
+                          </button>
+                          <button 
+                            className={`btn ${activeTab === 'statistics' ? 'btn-primary' : 'btn-outline'}`}
+                            onClick={() => setActiveTab('statistics')}
+                            style={{ borderRadius: '0 var(--border-radius-md) 0 0' }}
+                          >
+                            📊 Statistics
+                          </button>
+                        </>
                       )}
                     </div>
 
@@ -339,7 +348,7 @@ const UserDashboard = () => {
                   </div>
                   <div className="text-center">
                     <div className="text-purple font-bold">🥫</div>
-                    <p className="text-secondary">Aluminum: {userData?.recycle_stats?.aluminum || 0}</p>
+                    <p className="text-secondary">Metal: {userData?.recycle_stats?.metal || 0}</p>
                   </div>
                   <div className="text-center">
                     <div className="text-success font-bold">📦</div>
@@ -422,6 +431,13 @@ const UserDashboard = () => {
         {activeTab === 'admin' && userData?.role === 'admin' && (
           <div className="fade-in">
             <AdminBinManager />
+          </div>
+        )}
+
+        {/* Statistics Tab */}
+        {activeTab === 'statistics' && userData?.role === 'admin' && (
+          <div className="fade-in">
+            <Statistics />
           </div>
         )}
       </div>
