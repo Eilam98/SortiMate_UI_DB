@@ -110,9 +110,9 @@ const SignIn = ({ onBack, onSuccess }) => {
               name="idNumber"
               value={formData.idNumber}
               onChange={handleChange}
-              placeholder="ID Number (9 digits)"
+              placeholder="ID Number (any format for testing)"
               required
-              pattern="\d{9}"
+              // pattern="\d{9}" // REMOVED: ID pattern restriction for testing
               className="card"
               style={{ 
                 width: '100%', 

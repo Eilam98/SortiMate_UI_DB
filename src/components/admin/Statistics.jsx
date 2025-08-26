@@ -8,9 +8,11 @@ import {
   Title,
   Tooltip,
   Legend,
+  ArcElement,
+  BarElement,
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
-import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { Line, Pie, Bar } from 'react-chartjs-2';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs } from 'firebase/firestore';
 import '../../styles/Statistics.css';
 
 ChartJS.register(
@@ -20,7 +22,9 @@ ChartJS.register(
   PointElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  ArcElement,
+  BarElement
 );
 
 const Statistics = () => {
@@ -28,9 +32,211 @@ const Statistics = () => {
     labels: [],
     datasets: []
   });
+  const [accuracyData, setAccuracyData] = useState({
+    labels: [],
+    datasets: []
+  });
+  const [peakHoursData, setPeakHoursData] = useState({
+    labels: [],
+    datasets: []
+  });
   const [loading, setLoading] = useState(true);
+  const [selectedMaterial, setSelectedMaterial] = useState('all');
 
   const db = getFirestore();
+
+  // Get date 30 days ago
+  const getThirtyDaysAgo = () => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    return date;
+  };
+
+  // Filter events by material type
+  const filterByMaterial = (events, material) => {
+    if (material === 'all') return events;
+    return events.filter(event => {
+      const wasteType = event.waste_type?.toLowerCase() || event.model_classification_waste_type?.toLowerCase();
+      return wasteType === material.toLowerCase();
+    });
+  };
+
+  // Calculate accuracy metrics
+  const calculateAccuracyMetrics = async () => {
+    try {
+      const thirtyDaysAgo = getThirtyDaysAgo();
+      
+      // Get all waste events from past 30 days
+      const wasteEventsQuery = query(
+        collection(db, 'waste_events'),
+        where('timestamp', '>=', thirtyDaysAgo)
+      );
+      const wasteEventsSnapshot = await getDocs(wasteEventsQuery);
+      const wasteEvents = wasteEventsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      // Get all wrong classifications from past 30 days
+      const wrongClassificationsQuery = query(
+        collection(db, 'wrong_classifications'),
+        where('timestamp', '>=', thirtyDaysAgo)
+      );
+      const wrongClassificationsSnapshot = await getDocs(wrongClassificationsQuery);
+      const wrongClassifications = wrongClassificationsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      // Filter by selected material
+      const filteredWasteEvents = filterByMaterial(wasteEvents, selectedMaterial);
+      const filteredWrongClassifications = filterByMaterial(wrongClassifications, selectedMaterial);
+
+      // Calculate metrics
+      const totalEvents = filteredWasteEvents.length;
+      const totalCorrections = filteredWrongClassifications.length;
+      const accurateClassifications = totalEvents - totalCorrections;
+
+      // Split corrections by confidence
+      const highConfidenceCorrections = filteredWrongClassifications.filter(
+        wc => (wc.confidence || 0) >= 0.85
+      ).length;
+      const lowConfidenceCorrections = totalCorrections - highConfidenceCorrections;
+
+      // Calculate percentages
+      const accuratePercentage = totalEvents > 0 ? (accurateClassifications / totalEvents) * 100 : 0;
+      const highConfPercentage = totalEvents > 0 ? (highConfidenceCorrections / totalEvents) * 100 : 0;
+      const lowConfPercentage = totalEvents > 0 ? (lowConfidenceCorrections / totalEvents) * 100 : 0;
+
+      setAccuracyData({
+        labels: [
+          `Accurate (${accuratePercentage.toFixed(1)}%)`,
+          `High Confidence Corrections (${highConfPercentage.toFixed(1)}%)`,
+          `Low Confidence Corrections (${lowConfPercentage.toFixed(1)}%)`
+        ],
+        datasets: [{
+          data: [accurateClassifications, highConfidenceCorrections, lowConfidenceCorrections],
+          backgroundColor: [
+            'rgba(75, 192, 192, 0.8)',
+            'rgba(255, 159, 64, 0.8)',
+            'rgba(255, 99, 132, 0.8)'
+          ],
+          borderColor: [
+            'rgba(75, 192, 192, 1)',
+            'rgba(255, 159, 64, 1)',
+            'rgba(255, 99, 132, 1)'
+          ],
+          borderWidth: 2,
+        }]
+      });
+      
+    } catch (error) {
+      console.error('Error calculating accuracy metrics:', error);
+    }
+  };
+
+  // Calculate peak hours data
+  const calculatePeakHours = async () => {
+    try {
+      const thirtyDaysAgo = getThirtyDaysAgo();
+      
+      // Get all waste events from past 30 days
+      const wasteEventsQuery = query(
+        collection(db, 'waste_events'),
+        where('timestamp', '>=', thirtyDaysAgo)
+      );
+      const wasteEventsSnapshot = await getDocs(wasteEventsQuery);
+      const wasteEvents = wasteEventsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      // Initialize hourly data (0-23 hours)
+      const hourlyData = Array(24).fill(0);
+      
+      // Count events by hour
+      wasteEvents.forEach(event => {
+        const timestamp = event.timestamp?.toDate?.() || new Date(event.timestamp);
+        const hour = timestamp.getHours();
+        hourlyData[hour]++;
+      });
+
+      // Find top 3 peak hours
+      const peakHours = hourlyData
+        .map((count, hour) => ({ hour, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 3);
+
+      // Create labels for hours
+      const labels = hourlyData.map((_, hour) => {
+        const timeLabel = hour === 0 ? '12 AM' : 
+                         hour === 12 ? '12 PM' : 
+                         hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
+        return timeLabel;
+      });
+
+      // Create background colors (highlight peaks)
+      const backgroundColors = hourlyData.map((_, hour) => {
+        const isPeak = peakHours.some(peak => peak.hour === hour);
+        return isPeak ? 'rgba(255, 99, 132, 0.8)' : 'rgba(54, 162, 235, 0.6)';
+      });
+
+      // Create border colors
+      const borderColors = hourlyData.map((_, hour) => {
+        const isPeak = peakHours.some(peak => peak.hour === hour);
+        return isPeak ? 'rgba(255, 99, 132, 1)' : 'rgba(54, 162, 235, 1)';
+      });
+
+      setPeakHoursData({
+        labels: labels,
+        datasets: [{
+          label: 'Items Recycled',
+          data: hourlyData,
+          backgroundColor: backgroundColors,
+          borderColor: borderColors,
+          borderWidth: 2,
+          borderRadius: 4,
+        }]
+      });
+
+      // Generate collection suggestions
+      const suggestions = generateCollectionSuggestions(peakHours);
+      console.log('📊 Collection Suggestions:', suggestions);
+      
+    } catch (error) {
+      console.error('Error calculating peak hours:', error);
+    }
+  };
+
+  // Generate collection time suggestions
+  const generateCollectionSuggestions = (peakHours) => {
+    if (peakHours.length === 0) return [];
+    
+    const suggestions = [];
+    
+    // Morning collection (before peak)
+    const morningPeaks = peakHours.filter(peak => peak.hour >= 8 && peak.hour <= 12);
+    if (morningPeaks.length > 0) {
+      const earliestPeak = Math.min(...morningPeaks.map(p => p.hour));
+      suggestions.push(`Morning: Collect before ${earliestPeak === 12 ? '12 PM' : earliestPeak > 12 ? `${earliestPeak - 12} PM` : `${earliestPeak} AM`}`);
+    }
+    
+    // Afternoon collection (after peak)
+    const afternoonPeaks = peakHours.filter(peak => peak.hour >= 12 && peak.hour <= 17);
+    if (afternoonPeaks.length > 0) {
+      const latestPeak = Math.max(...afternoonPeaks.map(p => p.hour));
+      suggestions.push(`Afternoon: Collect after ${latestPeak === 12 ? '12 PM' : latestPeak > 12 ? `${latestPeak - 12} PM` : `${latestPeak} AM`}`);
+    }
+    
+    // Evening collection (after peak)
+    const eveningPeaks = peakHours.filter(peak => peak.hour >= 17 && peak.hour <= 22);
+    if (eveningPeaks.length > 0) {
+      const latestPeak = Math.max(...eveningPeaks.map(p => p.hour));
+      suggestions.push(`Evening: Collect after ${latestPeak > 12 ? `${latestPeak - 12} PM` : `${latestPeak} AM`}`);
+    }
+    
+    return suggestions;
+  };
 
   // Get the current week key (YYYY-WW format)
   const getCurrentWeekKey = () => {
@@ -147,10 +353,43 @@ const Statistics = () => {
       setLoading(false);
     });
 
-
-
     return () => unsubscribe();
   }, []);
+
+  // Set up real-time listeners for accuracy metrics and peak hours
+  useEffect(() => {
+    const thirtyDaysAgo = getThirtyDaysAgo();
+    
+    // Listen to waste events
+    const wasteEventsQuery = query(
+      collection(db, 'waste_events'),
+      where('timestamp', '>=', thirtyDaysAgo)
+    );
+    
+    // Listen to wrong classifications
+    const wrongClassificationsQuery = query(
+      collection(db, 'wrong_classifications'),
+      where('timestamp', '>=', thirtyDaysAgo)
+    );
+    
+    const unsubscribeWasteEvents = onSnapshot(wasteEventsQuery, () => {
+      calculateAccuracyMetrics();
+      calculatePeakHours();
+    });
+    
+    const unsubscribeWrongClassifications = onSnapshot(wrongClassificationsQuery, () => {
+      calculateAccuracyMetrics();
+    });
+    
+    // Initial calculations
+    calculateAccuracyMetrics();
+    calculatePeakHours();
+    
+    return () => {
+      unsubscribeWasteEvents();
+      unsubscribeWrongClassifications();
+    };
+  }, [selectedMaterial]);
 
   const options = {
     responsive: true,
@@ -231,6 +470,117 @@ const Statistics = () => {
     },
   };
 
+  const pieOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          usePointStyle: true,
+          padding: 20,
+          font: {
+            size: 14,
+            weight: 'bold'
+          }
+        }
+      },
+      title: {
+        display: true,
+        text: `AI Classification Accuracy (Past 30 Days) - ${selectedMaterial.charAt(0).toUpperCase() + selectedMaterial.slice(1)}`,
+        font: {
+          size: 16,
+          weight: 'bold'
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        borderWidth: 1,
+        cornerRadius: 8,
+        displayColors: true,
+        callbacks: {
+          label: function(context) {
+            const label = context.label || '';
+            const value = context.parsed;
+            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+            return `${label}: ${value} (${percentage}%)`;
+          }
+        }
+      },
+    },
+  };
+
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      title: {
+        display: true,
+        text: 'Hourly Recycling Activity (Past 30 Days)',
+        font: {
+          size: 16,
+          weight: 'bold'
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        borderWidth: 1,
+        cornerRadius: 8,
+        displayColors: true,
+        callbacks: {
+          title: function(context) {
+            return `Time: ${context[0].label}`;
+          },
+          label: function(context) {
+            return `Items Recycled: ${context.parsed.y}`;
+          }
+        }
+      },
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Hour of Day',
+          font: {
+            size: 14,
+            weight: 'bold'
+          }
+        },
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'Number of Items',
+          font: {
+            size: 14,
+            weight: 'bold'
+          }
+        },
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1
+        },
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        }
+      },
+    },
+  };
+
 
 
   if (loading) {
@@ -270,6 +620,46 @@ const Statistics = () => {
             <h3>Registered Users This Week</h3>
             <p className="stat-number registered">
               {connectionData.datasets[1]?.data?.[connectionData.datasets[1]?.data?.length - 1] || 0}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Accuracy Metrics Section */}
+      <div className="chart-container mt-4">
+        <div className="chart-wrapper">
+          <Pie data={accuracyData} options={pieOptions} />
+        </div>
+        
+        <div className="accuracy-controls mt-3">
+          <label htmlFor="material-select" className="form-label fw-bold">
+            Material Filter:
+          </label>
+          <select
+            id="material-select"
+            className="form-select"
+            value={selectedMaterial}
+            onChange={(e) => setSelectedMaterial(e.target.value)}
+          >
+            <option value="all">All Materials</option>
+            <option value="plastic">Plastic</option>
+            <option value="metal">Metal</option>
+            <option value="glass">Glass</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Peak Hours Analysis Section */}
+      <div className="chart-container mt-4">
+        <div className="chart-wrapper">
+          <Bar data={peakHoursData} options={barOptions} />
+        </div>
+        
+        <div className="peak-hours-info mt-3">
+          <div className="peak-highlight">
+            <h4>📊 Peak Hours Analysis</h4>
+            <p className="text-muted">
+              Red bars indicate the busiest recycling hours. Use this data to optimize collection schedules.
             </p>
           </div>
         </div>
