@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { auth } from './firebase/config';
+import wrongClassificationAutoResolver from './services/wrongClassificationAutoResolver';
 
 import IntroductionPage from './components/common/IntroductionPage';
 import SignUp from './components/auth/SignUp';
@@ -78,12 +79,19 @@ function App() {
   const [showLoading, setShowLoading] = useState(true);
 
   useEffect(() => {
+    // Initialize wrong classification auto-resolver
+    wrongClassificationAutoResolver.initialize();
+
     // Show loading screen for 4-5 seconds for a more polished experience
     const timer = setTimeout(() => {
       setShowLoading(false);
     }, 4500); // 4.5 seconds
 
-    return () => clearTimeout(timer);
+    // Cleanup function
+    return () => {
+      clearTimeout(timer);
+      wrongClassificationAutoResolver.cleanup();
+    };
   }, []);
 
   const handleLoadingComplete = () => {
