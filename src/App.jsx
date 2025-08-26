@@ -8,7 +8,6 @@ import SignIn from './components/auth/SignIn';
 import UserDashboard from './components/dashboard/UserDashboard';
 
 import BinScanner from './components/recycling/BinScanner';
-import BinDetails from './components/recycling/BinDetails';
 import BinPage from './components/recycling/BinPage';
 import LoadingScreen from './components/dashboard/LoadingScreen';
 import RecyclingSessionWrapper from './components/recycling/RecyclingSessionWrapper';

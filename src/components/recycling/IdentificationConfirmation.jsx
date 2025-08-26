@@ -4,7 +4,7 @@ const IdentificationConfirmation = ({ wasteEvent, onCorrect, onIncorrect }) => {
   const getBottleEmoji = (type) => {
     switch (type.toLowerCase()) {
       case 'plastic': return '🥤';
-      case 'aluminum': return '🥫';
+      case 'metal': return '🥫';
       case 'glass': return '🍾';
       case 'other': return '📦';
       default: return '♻️';
@@ -14,7 +14,7 @@ const IdentificationConfirmation = ({ wasteEvent, onCorrect, onIncorrect }) => {
   const getBottleTypeDisplay = (type) => {
     switch (type.toLowerCase()) {
       case 'plastic': return 'Plastic';
-      case 'aluminum': return 'Aluminum';
+      case 'metal': return 'Metal';
       case 'glass': return 'Glass';
       case 'other': return 'Other';
       default: return type;

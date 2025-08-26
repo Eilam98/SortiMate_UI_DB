@@ -12,7 +12,7 @@ const WrongClassificationModal = ({
 
   const wasteTypes = [
     { value: 'plastic', label: 'Plastic' },
-    { value: 'aluminum', label: 'Aluminum' },
+            { value: 'metal', label: 'Metal' },
     { value: 'glass', label: 'Glass' },
     { value: 'other', label: 'Other' }
   ];

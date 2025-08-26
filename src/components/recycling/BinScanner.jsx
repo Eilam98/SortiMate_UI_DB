@@ -159,7 +159,7 @@ const BinScanner = () => {
                 </div>
                 <div className="text-center">
                   <div className="text-purple font-bold">🥫</div>
-                  <p className="text-secondary">Aluminium: {binData?.capacity?.aluminium || 0}</p>
+                  <p className="text-secondary">Metal: {binData?.capacity?.metal || 0}</p>
                 </div>
                 <div className="text-center">
                   <div className="text-success font-bold">📦</div>

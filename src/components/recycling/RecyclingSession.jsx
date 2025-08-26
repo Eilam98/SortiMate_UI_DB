@@ -21,7 +21,7 @@ const RecyclingSession = ({ userData }) => {
   const [sessionBottles, setSessionBottles] = useState({
     plastic: 0,
     glass: 0,
-    aluminum: 0,
+    metal: 0,
     other: 0
   });
   const [sessionPoints, setSessionPoints] = useState(0);
@@ -169,7 +169,7 @@ const RecyclingSession = ({ userData }) => {
   const startNewSession = () => {
     const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     setSessionId(newSessionId);
-    setSessionBottles({ plastic: 0, glass: 0, aluminum: 0, other: 0 });
+    setSessionBottles({ plastic: 0, glass: 0, metal: 0, other: 0 });
     setSessionPoints(0);
     setSessionStartTime(new Date());
     setLastBottleTime(new Date());
@@ -207,8 +207,7 @@ const RecyclingSession = ({ userData }) => {
     switch (typeKey) {
       case 'metal':
       case 'aluminium':
-      case 'aluminum':
-        statsKey = 'aluminum';
+        statsKey = 'metal';
         break;
       case 'plastic':
         statsKey = 'plastic';
@@ -299,12 +298,13 @@ const RecyclingSession = ({ userData }) => {
     const newStats = {
       plastic: (currentUserData.recycle_stats?.plastic || 0) + sessionBottles.plastic,
       glass: (currentUserData.recycle_stats?.glass || 0) + sessionBottles.glass,
-      aluminum: (currentUserData.recycle_stats?.aluminum || 0) + sessionBottles.aluminum,
+      metal: (currentUserData.recycle_stats?.metal || 0) + sessionBottles.metal,
       other: (currentUserData.recycle_stats?.other || 0) + sessionBottles.other,
     };
 
     await updateDoc(userRef, {
       total_points: increment(sessionPoints),
+      items_recycled: increment(totalBottles),
       recycle_stats: newStats
     });
     console.log(`🏆 Awarded ${sessionPoints} points to user ${user.uid}`);

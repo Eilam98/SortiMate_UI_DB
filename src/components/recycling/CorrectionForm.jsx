@@ -15,7 +15,7 @@ const CorrectionForm = ({ originalIdentification, onSubmit, onCancel }) => {
   const getBottleEmoji = (type) => {
     switch (type.toLowerCase()) {
       case 'plastic': return '🥤';
-      case 'aluminum': return '🥫';
+      case 'metal': return '🥫';
       case 'glass': return '🍾';
       case 'other': return '📦';
       default: return '♻️';
@@ -25,7 +25,7 @@ const CorrectionForm = ({ originalIdentification, onSubmit, onCancel }) => {
   const getBottleTypeDisplay = (type) => {
     switch (type.toLowerCase()) {
       case 'plastic': return 'Plastic';
-      case 'aluminum': return 'Aluminum';
+      case 'metal': return 'Metal';
       case 'glass': return 'Glass';
       case 'other': return 'Other';
       default: return type;
@@ -80,7 +80,7 @@ const CorrectionForm = ({ originalIdentification, onSubmit, onCancel }) => {
               >
                 <option value="">Select Correct Type</option>
                 <option value="plastic">🥤 Plastic</option>
-                <option value="aluminum">🥫 Aluminum</option>
+                <option value="metal">🥫 Metal</option>
                 <option value="glass">🍾 Glass</option>
                 <option value="other">📦 Other</option>
               </select>

@@ -65,8 +65,8 @@ const SessionSummary = ({ sessionBottles, sessionPoints, sessionStartTime, onAwa
               </div>
               <div className="text-center">
                 <div className="text-info" style={{ fontSize: '1.5rem' }}>🥫</div>
-                <h4>{sessionBottles.aluminum}</h4>
-                <p className="text-secondary">Aluminum</p>
+                <h4>{sessionBottles.metal}</h4>
+                <p className="text-secondary">Metal</p>
               </div>
               <div className="text-center">
                 <div className="text-info" style={{ fontSize: '1.5rem' }}>📦</div>

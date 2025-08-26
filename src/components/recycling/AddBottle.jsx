@@ -161,7 +161,7 @@ const AddBottle = ({ onUpdate, userData, binId }) => {
                       <option value="">Select Type</option>
                       <option value="plastic">Plastic</option>
                       <option value="glass">Glass</option>
-                      <option value="aluminum">Aluminum</option>
+                      <option value="metal">Metal</option>
                       <option value="other">Other</option>
                     </select>
                   </div>
