@@ -12,7 +12,7 @@ import {
   BarElement,
 } from 'chart.js';
 import { Line, Pie, Bar } from 'react-chartjs-2';
-import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import '../../styles/Statistics.css';
 
 ChartJS.register(
@@ -33,15 +33,29 @@ const Statistics = () => {
     datasets: []
   });
   const [accuracyData, setAccuracyData] = useState({
-    labels: [],
-    datasets: []
+    labels: ['No Data'],
+    datasets: [{
+      data: [1],
+      backgroundColor: ['rgba(200, 200, 200, 0.8)'],
+      borderColor: ['rgba(200, 200, 200, 1)'],
+      borderWidth: 2,
+    }]
   });
   const [peakHoursData, setPeakHoursData] = useState({
-    labels: [],
-    datasets: []
+    labels: Array.from({length: 24}, (_, i) => i === 0 ? '12 AM' : i === 12 ? '12 PM' : i > 12 ? `${i - 12} PM` : `${i} AM`),
+    datasets: [{
+      label: 'Items Recycled',
+      data: Array(24).fill(0),
+      backgroundColor: Array(24).fill('rgba(54, 162, 235, 0.6)'),
+      borderColor: Array(24).fill('rgba(54, 162, 235, 1)'),
+      borderWidth: 2,
+      borderRadius: 4,
+    }]
   });
   const [loading, setLoading] = useState(true);
   const [selectedMaterial, setSelectedMaterial] = useState('all');
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const db = getFirestore();
 
@@ -297,13 +311,14 @@ const Statistics = () => {
     }
   };
 
-  // Set up real-time listener for statistics
-  useEffect(() => {
-    const statsRef = doc(db, 'statistics', 'user_connections');
-    
-    const unsubscribe = onSnapshot(statsRef, (doc) => {
-      if (doc.exists()) {
-        const data = doc.data();
+  // Load connection data manually
+  const loadConnectionData = async () => {
+    try {
+      const statsRef = doc(db, 'statistics', 'user_connections');
+      const statsDoc = await getDoc(statsRef);
+      
+      if (statsDoc.exists()) {
+        const data = statsDoc.data();
         const weeks = data.weeks || {};
         
         // Sort weeks and get the last 12
@@ -346,49 +361,55 @@ const Statistics = () => {
             },
           ],
         });
+      }
+    } catch (error) {
+      console.error('Error loading connection data:', error);
+    }
+  };
+
+  // Manual refresh function
+  const refreshData = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        loadConnectionData(),
+        calculateAccuracyMetrics(),
+        calculatePeakHours()
+      ]);
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Load initial data
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([
+          loadConnectionData(),
+          calculateAccuracyMetrics(),
+          calculatePeakHours()
+        ]);
+        setLastUpdated(new Date());
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+      } finally {
         setLoading(false);
       }
-    }, (error) => {
-      console.error('Error listening to statistics:', error);
-      setLoading(false);
-    });
+    };
 
-    return () => unsubscribe();
+    loadInitialData();
   }, []);
 
-  // Set up real-time listeners for accuracy metrics and peak hours
+  // Refresh data when material filter changes
   useEffect(() => {
-    const thirtyDaysAgo = getThirtyDaysAgo();
-    
-    // Listen to waste events
-    const wasteEventsQuery = query(
-      collection(db, 'waste_events'),
-      where('timestamp', '>=', thirtyDaysAgo)
-    );
-    
-    // Listen to wrong classifications
-    const wrongClassificationsQuery = query(
-      collection(db, 'wrong_classifications'),
-      where('timestamp', '>=', thirtyDaysAgo)
-    );
-    
-    const unsubscribeWasteEvents = onSnapshot(wasteEventsQuery, () => {
-      calculateAccuracyMetrics();
-      calculatePeakHours();
-    });
-    
-    const unsubscribeWrongClassifications = onSnapshot(wrongClassificationsQuery, () => {
-      calculateAccuracyMetrics();
-    });
-    
-    // Initial calculations
-    calculateAccuracyMetrics();
-    calculatePeakHours();
-    
-    return () => {
-      unsubscribeWasteEvents();
-      unsubscribeWrongClassifications();
-    };
+    if (!loading) {
+      refreshData();
+    }
   }, [selectedMaterial]);
 
   const options = {
@@ -601,7 +622,37 @@ const Statistics = () => {
 
   return (
     <div className="statistics-container">
-      <h2>📊 System Statistics</h2>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>📊 System Statistics</h2>
+        <div className="d-flex align-items-center gap-3">
+          <div className="text-end">
+            {lastUpdated && (
+              <small className="text-muted d-block">
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </small>
+            )}
+            <small className="text-success d-block">
+              💡 Manual refresh to save Firebase reads
+            </small>
+          </div>
+          <button 
+            className="btn btn-primary btn-sm"
+            onClick={refreshData}
+            disabled={refreshing}
+          >
+            {refreshing ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                Refreshing...
+              </>
+            ) : (
+              <>
+                🔄 Refresh Data
+              </>
+            )}
+          </button>
+        </div>
+      </div>
       
       <div className="chart-container">
         <div className="chart-wrapper">

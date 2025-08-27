@@ -4,6 +4,7 @@ import { getFirestore, collection, query, where, getDocs, doc, getDoc, deleteDoc
 import { auth } from '../../firebase/config';
 import { useNavigate } from 'react-router-dom';
 import { trackConnection } from '../../utils/connectionTracker';
+import SortiMateLogo from '../common/SortiMateLogo';
 
 const signInWithIDAndPassword = async (idNumber, password) => {
   // Get the fake email from the ID
@@ -96,7 +97,9 @@ const SignIn = ({ onBack, onSuccess }) => {
     <div className="container-sm">
       <div className="card">
         <div className="text-center mb-4">
-          <div className="text-success" style={{ fontSize: '4rem' }}>🌱</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--spacing-md)' }}>
+            <SortiMateLogo size="large" />
+          </div>
           <h1 className="text-success">Welcome Back!</h1>
           <p className="text-secondary">Continue your recycling journey</p>
         </div>

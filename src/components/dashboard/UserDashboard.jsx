@@ -7,6 +7,7 @@ import AdminBinManager from '../admin/AdminBinManager';
 import Statistics from '../admin/Statistics';
 import FamilyManager from '../family/FamilyManager';
 import FamilyLeaderboard from '../family/FamilyLeaderboard';
+import SortiMateLogo from '../common/SortiMateLogo';
 
 
 const UserDashboard = () => {
@@ -250,7 +251,12 @@ const UserDashboard = () => {
         <div className="flex-between">
           <div>
             <h1 className="text-success">
-              {userData?.role === 'guest' ? '👤 Guest Mode' : '🌱 Welcome back, ' + (userData?.first_name || 'Recycler') + '!'}
+              {userData?.role === 'guest' ? '👤 Guest Mode' : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                  <SortiMateLogo size="small" />
+                  <span>Welcome back, {userData?.first_name || 'Recycler'}!</span>
+                </div>
+              )}
             </h1>
             <p className="text-secondary">
               {userData?.role === 'guest' 

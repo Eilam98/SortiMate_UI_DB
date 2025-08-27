@@ -4,6 +4,7 @@ import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { auth } from '../../firebase/config';
 import { getFirestore, doc, setDoc, getDoc, getDocs, query, collection, where, deleteDoc } from 'firebase/firestore';
 import { trackConnection } from '../../utils/connectionTracker';
+import SortiMateLogo from '../common/SortiMateLogo';
 
 // REMOVED: Israeli ID validation for testing purposes
 // const isValidIsraeliID = (id) => {
@@ -128,7 +129,9 @@ const SignUp = ({ onBack, onSuccess }) => {
     <div className="container-sm">
       <div className="card">
         <div className="text-center mb-4">
-          <div className="text-success" style={{ fontSize: '4rem' }}>🌱</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--spacing-md)' }}>
+            <SortiMateLogo size="large" />
+          </div>
           <h1 className="text-success">Join SortiMate!</h1>
           <p className="text-secondary">Start your recycling journey today</p>
         </div>

@@ -3,6 +3,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../../firebase/config';
 import { trackConnection } from '../../utils/connectionTracker';
+import SortiMateLogo from './SortiMateLogo';
 
 const IntroductionPage = ({ onSignUpClick, onSignInClick, onGuestClick, successMessage }) => {
   const handleGuestClick = async () => {
@@ -62,7 +63,9 @@ const IntroductionPage = ({ onSignUpClick, onSignInClick, onGuestClick, successM
 
         {/* Hero Section */}
         <div className="card mb-4">
-          <div className="text-success" style={{ fontSize: '6rem' }}>🌱</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--spacing-md)' }}>
+            <SortiMateLogo size="large" />
+          </div>
           <h1 className="text-success">Welcome to SortiMate!</h1>
           <p className="text-secondary" style={{ fontSize: '1.2rem' }}>
             Turn recycling into a fun adventure with family competitions and smart bin tracking!
