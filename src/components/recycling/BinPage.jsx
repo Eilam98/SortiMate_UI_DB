@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { auth } from '../../firebase/config';
-import { getFirestore, doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, setDoc, serverTimestamp } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import IntroductionPage from '../common/IntroductionPage';
 import { deepLinkHandler } from '../../utils/deepLinkHandler';
+import { trackConnection } from '../../utils/connectionTracker';
 
 const BinPage = () => {
   const { binId } = useParams();
@@ -124,7 +126,7 @@ const BinPage = () => {
     console.log('🎯 BinPage: Storing binId in sessionStorage:', binId);
     sessionStorage.setItem('redirectBinId', binId);
     console.log('🎯 BinPage: Stored in sessionStorage:', sessionStorage.getItem('redirectBinId'));
-    navigate('/guest-dashboard');
+    navigate('/dashboard');
   };
 
   if (loading) {
@@ -157,8 +159,9 @@ const BinPage = () => {
       <IntroductionPage
         onSignUpClick={handleSignUpClick}
         onSignInClick={handleSignInClick}
-        onGuestClick={handleGuestClick}
         successMessage=""
+        customGuestHandler={handleGuestClick}
+        hideGuestButton={true}
       />
     </div>
   );

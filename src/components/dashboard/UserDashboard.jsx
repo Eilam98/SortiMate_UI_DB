@@ -28,6 +28,8 @@ const UserDashboard = () => {
       const db = getFirestore();
       const user = auth.currentUser;
 
+      console.log('🔄 UserDashboard: fetchUserData called, currentUser:', user ? user.uid : 'null');
+
       if (user) {
         // First try to get user document directly by UID (for guest users)
         const userDocRef = doc(db, 'users', user.uid);
@@ -37,8 +39,10 @@ const UserDashboard = () => {
         
         if (userDocSnap.exists()) {
           userData = userDocSnap.data();
+          console.log('🔄 UserDashboard: User found by UID:', userData);
           setUserData(userData);
         } else {
+          console.log('🔄 UserDashboard: User not found by UID, searching by auth_uid...');
           // If not found by UID, search by auth_uid (for regular users)
           const q = query(collection(db, 'users'), where('auth_uid', '==', user.uid));
           const querySnapshot = await getDocs(q);
@@ -46,8 +50,10 @@ const UserDashboard = () => {
           if (!querySnapshot.empty) {
             const userDoc = querySnapshot.docs[0];
             userData = userDoc.data();
+            console.log('🔄 UserDashboard: User found by auth_uid:', userData);
             setUserData(userData);
           } else {
+            console.log('🔄 UserDashboard: User not found by either method');
             setError("User data not found. You may have been removed.");
             await signOut(auth);
             return;
@@ -83,7 +89,7 @@ const UserDashboard = () => {
     }
   };
 
-  useEffect(() => {
+    useEffect(() => {
     fetchUserData();
     // Listen for auth state changes to keep userData up-to-date
     const unsubscribe = getAuth().onAuthStateChanged(() => {
@@ -166,14 +172,30 @@ const UserDashboard = () => {
     const binId = urlParams.get('bin');
     
     if (binId && userData) {
-      // Store the bin ID in state before clearing URL
-      setRedirectBinId(binId);
-      // Switch to add-bottle tab
-      setActiveTab('add-bottle');
-      // Clear the query parameter from URL
-      navigate('/dashboard', { replace: true });
+      // For guest users, navigate directly to recycling session
+      if (userData.role === 'guest') {
+        console.log('🎯 Guest user with bin redirect, going directly to recycling session:', binId);
+        navigate(`/recycling-session/${binId}`, { replace: true });
+      } else {
+        // For regular users, switch to add-bottle tab
+        setRedirectBinId(binId);
+        setActiveTab('add-bottle');
+        navigate('/dashboard', { replace: true });
+      }
     }
   }, [location.search, userData, navigate]);
+
+  // Handle sessionStorage redirectBinId for guest users (from QR scan)
+  useEffect(() => {
+    if (userData?.role === 'guest') {
+      const redirectBinId = sessionStorage.getItem('redirectBinId');
+      if (redirectBinId) {
+        console.log('🎯 Guest user with sessionStorage redirectBinId, going directly to recycling session:', redirectBinId);
+        sessionStorage.removeItem('redirectBinId');
+        navigate(`/recycling-session/${redirectBinId}`, { replace: true });
+      }
+    }
+  }, [userData, navigate]);
 
   // Clear redirect bin ID when switching away from add-bottle tab
   useEffect(() => {
